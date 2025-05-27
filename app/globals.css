@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom scrollbar for webkit browsers */
+@layer utilities {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+}
+
+/* Mobile-specific styles */
+@layer utilities {
+  @media (max-width: 991.98px) {
+    .vh-100 {
+      height: 100vh;
+      height: 100dvh; /* Dynamic viewport height for mobile */
+    }
+  }
+}
+
+/* Message bubble animations */
+@layer components {
+  .card {
+    transition: transform 0.1s ease-in-out;
+  }
+
+  .card:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Loading animation */
+@layer utilities {
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+}
+
+/* Custom icon styles */
+@layer components {
+  .icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+  }
+}
+
+/* Bootstrap compatibility fixes */
+@layer base {
+  /* Ensure proper box-sizing */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /* Reset margins and paddings for consistency */
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .min-vh-100 {
+    min-height: 100vh;
+  }
+
+  .vh-100 {
+    height: 100vh;
+  }
+
+  .text-break {
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+  }
+
+  .shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+  }
+
+  .border-0 {
+    border: 0 !important;
+  }
+
+  .rounded-circle {
+    border-radius: 50% !important;
+  }
+
+  .bg-opacity-50 {
+    --bs-bg-opacity: 0.5;
+  }
+}
+
+/* Responsive utilities */
+@layer utilities {
+  @media (min-width: 992px) {
+    .d-lg-none {
+      display: none !important;
+    }
+
+    .d-lg-block {
+      display: block !important;
+    }
+  }
+
+  @media (max-width: 991.98px) {
+    .d-lg-none {
+      display: block !important;
+    }
+
+    .d-lg-block {
+      display: none !important;
+    }
+  }
+}
