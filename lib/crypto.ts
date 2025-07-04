@@ -50,7 +50,7 @@ export class SimpleCrypto {
     }
   }
 
-  // Generate AES key for message encryption
+  // Generate AES key for message encryption (supports long messages)
   async generateAESKey(): Promise<CryptoKey> {
     return await window.crypto.subtle.generateKey(
       {
@@ -62,7 +62,7 @@ export class SimpleCrypto {
     )
   }
 
-  // Encrypt message with AES (supports long messages)
+  // Encrypt message with AES (supports up to 1000+ characters)
   async encryptMessageWithAES(message: string, aesKey: CryptoKey): Promise<{ encryptedData: string; iv: string }> {
     try {
       const encoder = new TextEncoder()
@@ -163,17 +163,22 @@ export class SimpleCrypto {
     }
   }
 
-  // Main encryption method for multiple users (hybrid encryption)
+  // Main encryption method for multiple users (hybrid encryption - supports 1000+ chars)
   async encryptMessageForMultipleUsers(
     message: string,
     publicKeys: Map<string, CryptoKey>,
   ): Promise<{ [username: string]: { encryptedMessage: string; encryptedKey: string; iv: string } }> {
     const encryptedMessages: { [username: string]: { encryptedMessage: string; encryptedKey: string; iv: string } } = {}
 
+    // Validate message length (increased to 1000 characters)
+    if (message.length > 1000) {
+      throw new Error("Message too long (max 1000 characters)")
+    }
+
     // Generate one AES key for this message
     const aesKey = await this.generateAESKey()
 
-    // Encrypt the message with AES
+    // Encrypt the message with AES (handles long messages efficiently)
     const { encryptedData, iv } = await this.encryptMessageWithAES(message, aesKey)
 
     // Encrypt the AES key for each recipient with their RSA public key
@@ -198,7 +203,7 @@ export class SimpleCrypto {
     if (!this.keyPair) throw new Error("No key pair generated")
 
     try {
-      // Handle legacy format (direct RSA encryption)
+      // Handle legacy format (direct RSA encryption - limited to ~190 chars)
       if (!encryptedKey && !iv) {
         const encrypted = Uint8Array.from(atob(encryptedMessage), (c) => c.charCodeAt(0))
         const decrypted = await window.crypto.subtle.decrypt(
@@ -212,7 +217,7 @@ export class SimpleCrypto {
         return decoder.decode(decrypted)
       }
 
-      // Handle new hybrid format
+      // Handle new hybrid format (supports 1000+ characters)
       const aesKey = await this.decryptAESKey(encryptedKey)
       return await this.decryptMessageWithAES(encryptedMessage, iv, aesKey)
     } catch (error) {
@@ -221,17 +226,39 @@ export class SimpleCrypto {
     }
   }
 
-  // Legacy method for backward compatibility (now uses hybrid encryption)
+  // Legacy method for backward compatibility (now uses hybrid encryption for long messages)
   async encryptMessage(message: string, publicKey: CryptoKey): Promise<string> {
-    const aesKey = await this.generateAESKey()
-    const { encryptedData, iv } = await this.encryptMessageWithAES(message, aesKey)
-    const encryptedKey = await this.encryptAESKey(aesKey, publicKey)
+    // For messages longer than 190 chars, use hybrid encryption
+    if (message.length > 190) {
+      const aesKey = await this.generateAESKey()
+      const { encryptedData, iv } = await this.encryptMessageWithAES(message, aesKey)
+      const encryptedKey = await this.encryptAESKey(aesKey, publicKey)
 
-    // Return combined data
-    return JSON.stringify({
-      encryptedMessage: encryptedData,
-      encryptedKey: encryptedKey,
-      iv: iv,
-    })
+      // Return combined data as JSON
+      return JSON.stringify({
+        encryptedMessage: encryptedData,
+        encryptedKey: encryptedKey,
+        iv: iv,
+      })
+    }
+
+    // For short messages, use direct RSA encryption
+    try {
+      const encoder = new TextEncoder()
+      const data = encoder.encode(message)
+
+      const encrypted = await window.crypto.subtle.encrypt(
+        {
+          name: "RSA-OAEP",
+        },
+        publicKey,
+        data,
+      )
+
+      return btoa(String.fromCharCode(...new Uint8Array(encrypted)))
+    } catch (error) {
+      console.error("Failed to encrypt message:", error)
+      throw error
+    }
   }
 }

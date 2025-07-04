@@ -52,7 +52,8 @@ export default function Chat({ username, onLogout }: ChatProps) {
           {
             id: "welcome",
             sender: "System",
-            content: "🔐 End-to-end encryption enabled. Your messages are secure! Now supports up to 1000 characters.",
+            content:
+              "🔐 End-to-end encryption enabled. Your messages are secure!\n✅ Now supports up to 1000 characters per message\n✅ Hybrid AES+RSA encryption for long messages",
             timestamp: new Date(),
             isEncrypted: false,
           },
@@ -198,7 +199,7 @@ export default function Chat({ username, onLogout }: ChatProps) {
       // If there are other users and we have their keys, encrypt the message
       if (otherUsers.length > 0) {
         try {
-          // Check message length (now supports up to 1000 characters)
+          // Validate message length (1000 characters max)
           if (newMessage.length > 1000) {
             throw new Error("Message too long (max 1000 characters)")
           }
@@ -213,19 +214,23 @@ export default function Chat({ username, onLogout }: ChatProps) {
           }
 
           if (otherUserKeys.size > 0) {
-            // Encrypt for all other users using hybrid encryption
+            // Encrypt for all other users using hybrid encryption (supports 1000 chars)
             const encryptedForUsers = await crypto.current.encryptMessageForMultipleUsers(newMessage, otherUserKeys)
 
             if (Object.keys(encryptedForUsers).length > 0) {
               messageContent = encryptedForUsers
               isEncrypted = true
-              console.log(`Encrypted message for ${Object.keys(encryptedForUsers).length} users`)
+              console.log(
+                `Encrypted ${newMessage.length} character message for ${Object.keys(encryptedForUsers).length} users`,
+              )
             }
           }
         } catch (error) {
           console.error("Encryption failed:", error)
-          setError("Message too long or encryption failed. Sending unencrypted.")
+          setError("Message too long (max 1000 characters) or encryption failed.")
           setTimeout(() => setError(null), 3000)
+          setIsLoading(false)
+          return
         }
       }
 
@@ -334,7 +339,7 @@ export default function Chat({ username, onLogout }: ChatProps) {
                   className={`rounded-circle me-2 ${cryptoReady ? "bg-success" : "bg-warning"}`}
                   style={{ width: "8px", height: "8px" }}
                 ></div>
-                <small className="text-muted">{cryptoReady ? "Encrypted" : "Setting up..."}</small>
+                <small className="text-muted">{cryptoReady ? "Encrypted (1000 chars)" : "Setting up..."}</small>
               </div>
             </div>
           </div>
@@ -360,15 +365,14 @@ export default function Chat({ username, onLogout }: ChatProps) {
                 </div>
               ))}
             </div>
-          </div>
 
-          <div className="p-3 border-top">
-            <button onClick={handleLogout} className="btn btn-outline-danger btn-sm w-100">
-              <LogoutIcon className="me-2" size={14} />
-              Logout
-            </button>
+            <div className="mt-3">
+              <button onClick={handleLogout} className="btn btn-outline-danger btn-sm w-100">
+                <LogoutIcon className="me-2" size={14} />
+                Logout
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* Main Chat Area */}
         <div className="flex-grow-1 d-flex flex-column">
@@ -381,7 +385,7 @@ export default function Chat({ username, onLogout }: ChatProps) {
               <h5 className="mb-0 fw-bold d-none d-lg-block">Chat Room</h5>
               <span className="badge bg-secondary">
                 <LockIcon className="me-1" size={12} />
-                End-to-End Encrypted
+                1000 Chars • End-to-End Encrypted
               </span>
             </div>
 
@@ -471,7 +475,7 @@ export default function Chat({ username, onLogout }: ChatProps) {
                     End-to-end encrypted • {users.length} user(s) online
                   </small>
                 </div>
-                <small className={`text-muted ${isNearLimit ? "text-warning" : ""}`}>
+                <small className={`text-muted ${isNearLimit ? "text-warning fw-bold" : ""}`}>
                   {characterCount}/{maxLength}
                 </small>
               </div>
